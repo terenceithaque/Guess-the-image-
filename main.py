@@ -2,6 +2,7 @@
 import random
 import os
 import pygame  # Importation du module Pygame
+from tkinter import messagebox
 pygame.init()  # Démarrer Pygame
 
 screen = pygame.display.set_mode(size=(400, 400))  # Fenêtre du jeu
@@ -9,6 +10,9 @@ pygame.display.set_caption("Guess the image !")
 
 dossier_images = "images"  # Dossier des images
 liste_images = os.listdir(dossier_images)
+if liste_images == []:  # S'il n'y a pas d'images dans le dossier
+    raise Exception(messagebox.showerror("Des images sont inexistantes ou introuvables",
+                    "Le jeu n'a pas pû être exécuté en raison de l'absence d'images dans 'images'."))
 
 
 def pick_images(images_to_pick):
