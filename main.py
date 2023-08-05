@@ -5,7 +5,8 @@ import pygame  # Importation du module Pygame
 from tkinter import messagebox
 pygame.init()  # Démarrer Pygame
 
-screen = pygame.display.set_mode(size=(800, 800))  # Fenêtre du jeu
+# Fenêtre du jeu en plein écran
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 pygame.display.set_caption("Guess the image !")
 
 dossier_images = "images"  # Dossier des images
@@ -35,11 +36,21 @@ def display_images_and_choices(image, choices):
     # Charger et afficher l'image
     chemin_image = os.path.join(dossier_images, image)
     image_chargee = pygame.image.load(chemin_image)
+    # Obtenir la taille de la fenêtre
+    window_size = pygame.display.get_surface().get_size()
+    pygame.transform.scale(image_chargee, window_size)
     screen.blit(image_chargee, (0, 0))  # Afficher l'image à l'écran
+
+
+def image_generator(images):
+    for image in images:
+        yield image
 
 
 images = pick_images(2)
 print(images)
+image_gen = image_generator(images)
+current_image = next(image_gen, None)
 running = True  # Le jeu est-il en cours d'exécution ?
 
 
@@ -48,10 +59,9 @@ while running:
         if evenement == pygame.QUIT:  # Si le joueur veut quitter le jeu
             running = False  # Terminer l'exécution de cette boucle, et, par conséquent, celle du jeu
 
-        for image in images:
+        if current_image is not None:
             display_images_and_choices(
-                image, ["Choix 1", "Choix 2", "Choix 3"]
-
-            )
+                current_image, ["Choix 1", "Choix 2", "Choix 3"])
+            current_image = next(image_gen, None)
 
     pygame.display.update()
