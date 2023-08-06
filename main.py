@@ -5,6 +5,56 @@ import pygame  # Importation du module Pygame
 from tkinter import messagebox
 pygame.init()  # Démarrer Pygame
 
+# auteur = ["Cavazzano", "Rota", "Midthun"]
+
+
+class Bouton:
+    "Bouton"
+
+    def __init__(self, x, y, width, height, text, onclick_function=None):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.text = text
+
+        print(self.text)
+        self.onclick_function = onclick_function
+
+        self.bouton_rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.author_name = text.split(" ")[-1].lower()
+
+    def draw(self, win, font):
+        "Dessiner le bouton à l'écran"
+        pygame.draw.rect(win, (100, 100, 100), self.bouton_rect)
+        text_surf = font.render(self.text, True, (255, 255, 255))
+        win.blit(text_surf, (self.x + (self.width / 2) - text_surf.get_width() / 2,
+                             self.y + (self.height / 2) - text_surf.get_height()))
+
+    def is_over(self, pos):
+        return self.bouton_rect.collidepoint(pos)
+
+    """def check_file(self, directory, string):
+        "Vérifier si un fichier contient une chaîne de caractères précise dans son nom"
+        for filename in os.listdir(directory):
+            if string.lower() in filename.lower():
+                return True
+        return False"""
+
+    def check_author(self, filename, string):
+        "Vérifier si le bouton correspond avec l'auteur de l'image"
+
+        if string.lower() in filename.lower():
+            print("Bonne réponse !")
+            return True
+        else:
+            print("Mauvaise réponse !")
+            return False
+
+    def click(self):
+        if self.onclick_function is not None:
+            self.onclick_function()
+
 
 class Jeu:
     "Jeu"
@@ -15,12 +65,18 @@ class Jeu:
         self.screen = pygame.display.set_mode((800, 600))
         pygame.display.set_caption("Guess the image !")
 
+        # Appliquer un fond blanc à la fenêtre
+        self.screen.fill((255, 255, 255))
+
         self.dossier_images = "images"  # Dossier des images
         # global liste_images
         self.liste_images = os.listdir(self.dossier_images)
         if self.liste_images == []:  # S'il n'y a pas d'images dans le dossier
             raise Exception(messagebox.showerror("Des images sont inexistantes ou introuvables",
                                                  "Le jeu n'a pas pû être exécuté en raison de l'absence d'images dans 'images'."))
+
+        self.boutons = [Bouton(30 + i*190, 400, 180, 60, "Dessin par " + auteur.lower())
+                        for i, auteur in enumerate(["Cavazanno", "Midthun", "Rota"])]
 
     def pick_images(self, images_to_pick):
         "Choisir plusieurs images au hasard dans liste_images"
@@ -40,12 +96,21 @@ class Jeu:
     def display_images_and_choices(self, image, choices):
         "Afficher chaque image et les choix de réponse correspondants"
         # Charger et afficher l'image
+        # print(f"Image courante : {image}")
+        self.screen.fill((255, 255, 255))
         chemin_image = os.path.join(self.dossier_images, image)
         image_chargee = pygame.image.load(chemin_image)
         # Obtenir la taille de la fenêtre
-        window_size = pygame.display.get_surface().get_size()
-        pygame.transform.scale(image_chargee, window_size)
+        # window_size = pygame.display.get_surface().get_size()
+        image_chargee = pygame.transform.scale(image_chargee, (400, 300))
+
         self.screen.blit(image_chargee, (0, 0))  # Afficher l'image à l'écran
+
+        font = pygame.font.Font(None, 15)
+        for bouton in self.boutons:
+            bouton.draw(self.screen, font)
+
+        pygame.display.update()
 
     def image_generator(self, images):
         for image in images:
@@ -53,7 +118,7 @@ class Jeu:
 
     def start(self):
         "Démarrer le jeu"
-        images = self.pick_images(2)
+        images = self.pick_images(3)
         print(images)
         image_gen = self.image_generator(images)
         current_image = next(image_gen, None)
@@ -61,15 +126,29 @@ class Jeu:
 
         while running:
             for evenement in pygame.event.get():  # Pour chaque évènement détecté dans la fenêtre de jeu
-                if evenement == pygame.QUIT:  # Si le joueur veut quitter le jeu
-                    running = False  # Terminer l'exécution de cette boucle, et, par conséquent, celle du jeu
+                if evenement.type == pygame.QUIT:  # Si le joueur veut quitter le jeu
+                    ask_quit = messagebox.askquestion(
+                        "Quitter le jeu maintenant", "Désirez-vous quitter le jeu ?")
+                    if ask_quit == "yes":
+                        running = False  # Terminer l'exécution de cette boucle, et, par conséquent, celle du jeu
+                    else:
+                        continue
+                if evenement.type == pygame.MOUSEBUTTONDOWN:
 
-            if current_image is not None:
-                self.display_images_and_choices(
-                    current_image, ["Choix 1", "Choix 2", "Choix 3"])
-            current_image = next(image_gen, None)
+                    for bouton in self.boutons:
+                        if bouton.is_over(pygame.mouse.get_pos()):
+                            author = current_image.split(
+                                "_")[1].split(".")[0]
+                            bouton.check_author(
+                                current_image, author)
 
-            pygame.display.update()
+                            current_image = next(image_gen, None)
+
+                if current_image is not None:
+                    self.display_images_and_choices(
+                        current_image, ["Choix 1", "Choix 2", "Choix 3"])
+
+                pygame.display.update()
 
 
 jeu = Jeu()
